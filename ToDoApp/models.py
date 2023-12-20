@@ -14,6 +14,7 @@ class Users(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
     role = Column(String)
+    phone_number = Column(String, nullable=False)
 
 class Todos(Base):
     # es una manera que tiene SQLalchemy para saber como nombrar la tabla dentro de la base de datos

@@ -1,16 +1,25 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 class userVerification(BaseModel):
     password: str
     new_password: str = Field(min_length=6)
-class CreateUserRequest(BaseModel):
-    username:str
-    email: str
+    
+class UserBase(BaseModel):
+    username:str 
+    email: EmailStr
     first_name: str
     last_name: str
     password:str
     role: str
+    phone_number: str
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr]   = None
+    first_name: Optional[str]  = None
+    last_name: Optional[str]  = None
+    role: Optional[str]  = None
+    phone_number: Optional[str] = None
 
 class Token(BaseModel):
     access_token : str

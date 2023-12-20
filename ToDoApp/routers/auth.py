@@ -66,7 +66,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
 
 @router.post("/", status_code=status.HTTP_201_CREATED, description="Create an user")
 async def create_user(db: db_dependency,
-                      create_user_request: schema.CreateUserRequest):
+                      create_user_request: schema.UserBase):
     create_user_model = Users(
         email=create_user_request.email,
         username=create_user_request.username,
@@ -74,7 +74,8 @@ async def create_user(db: db_dependency,
         last_name=create_user_request.last_name,
         role=create_user_request.role,
         hashed_password=bcrypt_context.hash(create_user_request.password),
-        is_active=True
+        is_active=True,
+        phone_number=create_user_request.phone_number
     )
     db.add(create_user_model)
     db.commit()
