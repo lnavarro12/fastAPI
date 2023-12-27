@@ -31,3 +31,6 @@ class TodoRequest(BaseModel):
     priority: int = Field(5, gt=0, lt=6)
     complete: bool
 
+class UserWithORM(UserUpdate):
+    class Config:
+        orm_mode = True

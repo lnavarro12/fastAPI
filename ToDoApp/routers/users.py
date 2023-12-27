@@ -2,14 +2,14 @@ from fastapi import APIRouter, HTTPException, Path, Depends
 from typing import Annotated
 from starlette import status
 from models import Users
-from schema import userVerification, UserUpdate
+from schema import userVerification, UserUpdate, UserWithORM
 from helpers import db_dependency
 from .auth import get_current_user, bcrypt_context
 
 router = APIRouter()
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-@router.get("/", status_code=status.HTTP_200_OK, description="Get user information")
+@router.get("/", status_code=status.HTTP_200_OK, description="Get user information", response_model=UserWithORM)
 async def get_user(db: db_dependency, user: user_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication failed")
