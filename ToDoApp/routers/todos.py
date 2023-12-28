@@ -21,7 +21,7 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 # HTML en una aplicación web. 
 @router.get("/test")
 async def test(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
+    return templates.TemplateResponse("register.html", {"request": request})
 
 @router.get("/", status_code=status.HTTP_200_OK, description="Get all todos")
 # Depends : Dependency injection, necesitamos hacer algo antes de ejecutar
