@@ -16,6 +16,9 @@ router = APIRouter()
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
+# Esta línea devuelve una instancia de TemplateResponse, 
+# que generalmente se utiliza para renderizar plantillas 
+# HTML en una aplicación web. 
 @router.get("/test")
 async def test(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
