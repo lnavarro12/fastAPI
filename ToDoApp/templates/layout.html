@@ -24,3 +24,19 @@
         </div>
     </nav>
 </div>
+
+{# es una etiqueta utilizada en plantillas que admiten el concepto de bloques.
+En el contexto de una plantilla, los bloques son áreas designadas que se pueden 
+sobrescribir en plantillas que extienden o heredan de otras plantillas. 
+Es una forma de estructurar las plantillas de manera modular y
+ permitir la personalización en lugares específicos.#}
+
+{% block content %}
+
+{% endblock %}
+
+<script src="{{url_for('static', path='/todo/js/jquery-slim.js')}}"></script>
+    <script src="{{url_for('static', path='/todo/js/popper.js')}}"></script>
+    <script src="{{url_for('static', path='/todo/js/bootstrap.js')}}"></script>
+</body>
+</html>

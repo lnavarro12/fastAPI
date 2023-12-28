@@ -1,6 +1,6 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 import schema
 from models import Users
 from starlette import status
@@ -10,6 +10,11 @@ from jose import jwt, JWTError
 from helpers import db_dependency
 from dotenv import load_dotenv
 import os
+
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory="templates")
 
 router = APIRouter()
 
@@ -90,3 +95,11 @@ async def doLogin(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     token = create_access_token(user.username, user.id, timedelta(minutes=20), user.role)
 
     return {"access_token":token, "token_type": "bearer"}
+
+@router.get("/", response_class=HTMLResponse)
+async def authentication_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@router.get("/register", response_class=HTMLResponse)
+async def register(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
