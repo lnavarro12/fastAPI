@@ -29,7 +29,7 @@ class TodoRequest(BaseModel):
     title: str = Field(min_length=3)
     description: Optional[str] = Field(min_length=3, max_length=100)
     priority: int = Field(5, gt=0, lt=6)
-    complete: bool
+    complete: bool = Field(False)
 
 class UserWithORM(UserUpdate):
     class Config:
