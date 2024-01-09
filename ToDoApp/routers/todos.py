@@ -19,19 +19,31 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 # HTML en una aplicación web. 
 @router.get("/", response_class=HTMLResponse)
 async def read_all_by_user(request: Request, db: db_dependency):
+
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
     
-    todos = db.query(Todos).filter_by(owner_id =1).order_by(desc(Todos.priority)).all()
-    return templates.TemplateResponse("home.html", {"request": request, "todos": todos})
+    todos = db.query(Todos).filter_by(owner_id = user.get("id")).order_by(desc(Todos.priority)).all()
+    return templates.TemplateResponse("home.html", {"request": request, "todos": todos, "user": user})
 
 @router.get("/add-todo", response_class=HTMLResponse)
 async def add_new_todo(request: Request, todo_id: int  = None):
     # Puedes enviar el objeto "todo" como None si estás creando uno nuevo
-    return templates.TemplateResponse("todo.html", {"request": request, "todo": None})
 
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+
+    return templates.TemplateResponse("todo.html", {"request": request, "todo": None, "user": user})
 
 @router.get("/delete/{todo_id}")
 async def delete_todo(request: Request, todo_id: int, db: db_dependency):
-    todo_model = db.query(Todos).filter_by(id=todo_id, owner_id = 1).first()
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+
+    todo_model = db.query(Todos).filter_by(id=todo_id, owner_id = user.get("id")).first()
 
     if todo_model is None:
         raise HTTPException(status_code=404, detail="Todo not found")
@@ -41,8 +53,13 @@ async def delete_todo(request: Request, todo_id: int, db: db_dependency):
     return responses.RedirectResponse(url="/todo", status_code = status.HTTP_302_FOUND)
 
 @router.get("/complete/{todo_id}")
-async def delete_todo(request: Request, todo_id: int, db: db_dependency):
-    todo = db.query(Todos).filter_by(id=todo_id).first()
+async def complete_todo(request: Request, todo_id: int, db: db_dependency):
+
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+
+    todo = db.query(Todos).filter_by(id=todo_id, owner_id = user.get("id")).first()
 
     if todo is None:
         raise HTTPException(status_code=404, detail="Todo not found")
@@ -64,6 +81,10 @@ async def save_info_todo(
         priority: int = Form(...),
         todo_id: int = None
     ):
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+
 
     # Si todo_id no es None, entonces es una solicitud de actualización
     if todo_id:
@@ -82,23 +103,28 @@ async def save_info_todo(
             title = title,
             description = description,
             priority = priority,
-            owner_id = 1,
+            owner_id = user.get("id"),
             complete = False
         )
         db.add(todo_model)
 
     db.commit()
     return responses.RedirectResponse(url="/todo", status_code=status.HTTP_302_FOUND)
+
 @router.get("/edit-todo/{todo_id}", response_class=HTMLResponse)
 async def edit_todo(request: Request,
                     db : db_dependency,
                     todo_id: int = Path(gt=0)):
+    user = await get_current_user(request)
+    if user is None:
+        return responses.RedirectResponse(url="/auth", status_code=status.HTTP_302_FOUND)
+
 
     # find the record in the database
     todo = db.query(Todos).filter_by(id =todo_id).first()
     if not todo:
         raise HTTPException(status_code=404, detail="Todo not found")
 
-    return templates.TemplateResponse("todo.html", {"request": request, "todo": todo})
+    return templates.TemplateResponse("todo.html", {"request": request, "todo": todo, "user": user})
 
 

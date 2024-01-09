@@ -1,5 +1,21 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from fastapi import Request
+
+class LoginForm:
+    def __init__(self, request:Request):
+        self.request: Request = request
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
+
+    # Defines an asynchronous method named create_oauth_form.
+    async def create_oauth_form(self):
+        form = await self.request.form()
+        # Sets the username attribute to the value of the "email"
+        # field in the form data.
+        self.username = form.get("email")
+        self.password = form.get("password")
+
 
 class userVerification(BaseModel):
     password: str

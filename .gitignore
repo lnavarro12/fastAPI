@@ -1,8 +1,7 @@
 .env
 env
-alembic/
-pycache__/
-pycache/
+__pycache__/
+.pyc
 
 # These are some examples of commonly ignored file patterns.
 # You should customize this list as applicable to your project.
@@ -12,8 +11,6 @@ pycache/
 # Node artifact files
 node_modules/
 dist/
-.env
-__pycache__/
 .vscode
 
 # migraciones 
@@ -33,7 +30,6 @@ __pycache__/
 
 # Maven
 target/
-dist/
 
 # JetBrains IDE
 .idea/

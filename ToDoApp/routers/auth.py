@@ -1,9 +1,9 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Form
 import schema
 from models import Users
-from starlette import status
+from starlette import status, responses
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -54,15 +54,20 @@ def create_access_token(username:str, user_id: int, expires_delta: timedelta, ro
 
 # Cada vez que se necesite seguridad en los endpoints, se llamará a esta función
 # Para verificar el token que el cliente envió con el OAuth
-async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
+# Tiene como dependencia el request, porque se evaluará en las cookies si viene el access token que
+# ya debio haberse generado a este punto
+async def get_current_user(request:Request):
     try:
+        token = request.cookies.get("access_token")
+        if token is None:
+            return None
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         user_id: int = payload.get("id")
         user_role : str = payload.get("role")
 
         if username is None or user_id is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user")
+            return None
 
         return {"username": username, "id": user_id, "role": user_role}
     except JWTError:
@@ -86,15 +91,21 @@ async def create_user(db: db_dependency,
     db.commit()
 
 @router.post("/token", response_model=schema.Token)
-async def doLogin(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+async def doLogin(response: Response, form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
                   db: db_dependency):
     user = authenticate_user(username=form_data.username, password=form_data.password, db=db)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user")
+        return False
 
-    token = create_access_token(user.username, user.id, timedelta(minutes=20), user.role)
+    token = create_access_token(user.username,
+                                user.id,
+                                timedelta(60),
+                                user.role
+                                )
 
-    return {"access_token":token, "token_type": "bearer"}
+    response.set_cookie(key="access_token", value=token, httponly=True)
+
+    return True
 
 @router.get("/", response_class=HTMLResponse)
 async def authentication_page(request: Request):
@@ -103,3 +114,32 @@ async def authentication_page(request: Request):
 @router.get("/register", response_class=HTMLResponse)
 async def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
+
+@router.post("/authenticate", response_class=HTMLResponse)
+async def login(
+                request: Request,
+                db: db_dependency
+                ):
+    try:
+        form = schema.LoginForm(request)
+        await form.create_oauth_form()
+        response = responses.RedirectResponse(url="/todo", status_code=status.HTTP_302_FOUND)
+
+        validate_user_cookie = await doLogin(response=response, form_data = form, db=db)
+
+        if not validate_user_cookie:
+            msg = "Incorrect username or password"
+            return templates.TemplateResponse("login.html", {"request": request, "msg": msg})
+
+        return response
+
+    except HTTPException:
+        msg= "Unknown error"
+        return templates.TemplateResponse("login.html", {"request": request, "msg":msg})
+
+@router.get("/logout")
+async def logout(request: Request):
+    msg = "Logout Successful"
+    response = templates.TemplateResponse("login.html", {"request": request, "msg": msg})
+    response.delete_cookie(key="access_token")
+    return response
