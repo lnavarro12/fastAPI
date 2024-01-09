@@ -1,5 +1,7 @@
 .env
 env
+alembic/
+idea/
 __pycache__/
 .pyc
 

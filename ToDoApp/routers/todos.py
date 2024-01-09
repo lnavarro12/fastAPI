@@ -126,5 +126,3 @@ async def edit_todo(request: Request,
         raise HTTPException(status_code=404, detail="Todo not found")
 
     return templates.TemplateResponse("todo.html", {"request": request, "todo": todo, "user": user})
-
-

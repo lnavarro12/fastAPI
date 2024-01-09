@@ -4,9 +4,16 @@ from fastapi import FastAPI
 import models
 from database import engine
 from routers import auth, todos, users
+from starlette import status
 from starlette.staticfiles import StaticFiles
+from starlette.responses import RedirectResponse
 
 app = FastAPI()
+
+# redireccionar las direcciones a la raiz del proyecto que es todo
+@app.get("/")
+async def root():
+    return RedirectResponse("/todo", status_code=status.HTTP_302_FOUND)
 
 # Cuando se corra la aplicación se creará automaticamente una base de datos en la ubicación  especificada en la URL
 # tambien se crean las tablas tal como se definieron en el modelo
@@ -22,7 +29,6 @@ models.Base.metadata.create_all(bind=engine)
 # y la aplicación de archivos estáticos se encargará de servir esos 
 # archivos desde el directorio especificado.
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(todos.router, prefix="/todo", tags=["Todos"])
 app.include_router(users.router, prefix="/user", tags=["Users"])

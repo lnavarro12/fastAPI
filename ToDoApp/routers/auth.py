@@ -67,28 +67,12 @@ async def get_current_user(request:Request):
         user_role : str = payload.get("role")
 
         if username is None or user_id is None:
-            return None
+            logout(request)
 
         return {"username": username, "id": user_id, "role": user_role}
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate user.")
 
-
-@router.post("/", status_code=status.HTTP_201_CREATED, description="Create an user")
-async def create_user(db: db_dependency,
-                      create_user_request: schema.UserBase):
-    create_user_model = Users(
-        email=create_user_request.email,
-        username=create_user_request.username,
-        first_name=create_user_request.first_name,
-        last_name=create_user_request.last_name,
-        role=create_user_request.role,
-        hashed_password=bcrypt_context.hash(create_user_request.password),
-        is_active=True,
-        phone_number=create_user_request.phone_number
-    )
-    db.add(create_user_model)
-    db.commit()
 
 @router.post("/token", response_model=schema.Token)
 async def doLogin(response: Response, form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -115,6 +99,41 @@ async def authentication_page(request: Request):
 async def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+@router.post("/register", response_class=HTMLResponse)
+async def register_user(request: Request, db: db_dependency,
+                        email: str = Form(...), username: str = Form(...),
+                        firstname: str = Form(...), lastname: str = Form(...),
+                        password: str = Form(...), verify_password: str = Form(...)):
+
+    validate_user_exist = db.query(Users).filter(Users.username==username or Users.email==email).first()
+    error = False
+    msg = ""
+    if validate_user_exist is not None:
+        error = True
+        msg = "User already exist!"
+
+    if password != verify_password:
+        error = True
+        msg = "Password not validate!"
+
+    if error:
+        return templates.TemplateResponse("register.html", {"request": request, "msg": msg})
+
+    new_user = Users(
+        email=email,
+        username=username,
+        first_name=firstname,
+        last_name=lastname,
+        hashed_password=bcrypt_context.hash(password),
+        is_active= True
+    )
+
+    db.add(new_user)
+    db.commit()
+
+    msg = "User created successfully!"
+    return templates.TemplateResponse("login.html", {"request": request, "msg": msg , "success": True})
+
 @router.post("/authenticate", response_class=HTMLResponse)
 async def login(
                 request: Request,
@@ -129,13 +148,13 @@ async def login(
 
         if not validate_user_cookie:
             msg = "Incorrect username or password"
-            return templates.TemplateResponse("login.html", {"request": request, "msg": msg})
+            return templates.TemplateResponse("login.html", {"request": request, "msg": msg, "success": False})
 
         return response
 
     except HTTPException:
         msg= "Unknown error"
-        return templates.TemplateResponse("login.html", {"request": request, "msg":msg})
+        return templates.TemplateResponse("login.html", {"request": request, "msg":msg , "success": False})
 
 @router.get("/logout")
 async def logout(request: Request):
