@@ -29,3 +29,4 @@ uvloop==0.17.0
 watchfiles==0.18.1
 websockets==10.4
 email-validator==2.1.0.post1
+Jinja2==3.1.2
